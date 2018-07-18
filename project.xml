@@ -1,0 +1,11 @@
+<project
+    name = "zp"
+    description = "ZeroMQ Pipes"
+    script = "zproject.gsl"
+    email = "zeromq-dev@lists.zeromq.org"
+    repository = "https://github.com/ZMQers/zp"
+    url = "https://github.com/ZMQers/zp"
+    license = "MPL-2.0"
+    >
+
+</project>
