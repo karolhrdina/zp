@@ -10,4 +10,13 @@
 
     <include filename = "src/license.xml" />
 
+    <version major = "1" minor = "0" />
+    <abi current = "1" revision = "0" age = "0" />
+
+    <use project = "czmq" />
+
+    <class name = "zp_proto" state = "stable">ZeroMQ Pipes protocol</class>
+
+    <model name = "zp_proto" />
+
 </project>
