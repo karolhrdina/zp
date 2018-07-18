@@ -1,0 +1,18 @@
+<class
+    name = "zp_proto"
+    title = "ZeroMQ Pipes protocol"
+    signature = "1"
+    script = "zproto_codec_c"
+    source_dir = "."
+    package_dir = "../include"
+    project_header = "zp_classes.h"
+    export_macro = "ZP_EXPORT"
+    >
+
+    Codec for ZeroMQ Pipes protocol
+
+    <include filename = "license.xml" />
+
+
+
+</class>
