@@ -13,6 +13,39 @@
 
     <include filename = "license.xml" />
 
+    <message name = "CONNECTION OPEN">
+        Client opens a connection to the server.
+        Server replies with OK or ERROR.
+        <field name = "protocol" type = "string" value = "ZEROMQ_PIPES">Constant "ZEROMQ_PIPES"</field>
+        <field name = "version" type = "number" size = "2" value = "1">Protocol version 1</field>
+        <field name = "uuid" type = "uuid">Client unique identifier</field>
+    </message>
 
+    <message name = "CONNECTION CLOSE">
+        Client closes the connection. This is polite though not mandatory.
+        Server will reply with OK.
+    </message>
+
+    <message name = "PING">
+        Client pings the server. Server replies with PONG, or
+        ERROR with status COMMAND-INVALID if the client is not recognized
+        (e.g. after a server restart or network recovery).
+    </message>
+
+    <message name = "PONG">
+        Server replies to a client connection ping.
+    </message>
+
+    <message name = "OK">
+        Server replies with success status. Actual status code provides more
+        information. An OK always has a 2xx status code.
+        <field name = "status" type = "status" />
+    </message>
+
+    <message name = "ERROR">
+        Server replies with failure status. Actual status code provides more
+        information. An ERROR always has a 3xx, 4xx, or 5xx status code.
+        <field name = "status" type = "status" />
+    </message>
 
 </class>
