@@ -41,7 +41,7 @@ EXTRA_DIST += \
 endif
 
 EXTRA_DIST += \
-    src/zp_async.h \
+    src/zpasync.h \
     LICENSE \
     README.md \
     src/zp_classes.h

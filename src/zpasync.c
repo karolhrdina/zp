@@ -1,5 +1,5 @@
 /*  =========================================================================
-    zp_async - Asynchronous job execution actor
+    zpasync - Asynchronous job execution actor
 
     Copyright (c) the Contributors as noted in the AUTHORS file.
     This file is part of the ZeroMQ Pipes Project.
@@ -12,7 +12,7 @@
 
 /*
 @header
-    zp_async - Asynchronous job execution actor
+    zpasync - Asynchronous job execution actor
 @discuss
 @end
 */
@@ -21,7 +21,7 @@
 
 //  Structure of our actor
 
-struct _zp_async_t {
+struct _zpasync_t {
     zsock_t *pipe;              //  Actor command pipe
     zpoller_t *poller;          //  Socket poller
     bool terminated;            //  Did caller ask us to quit?
@@ -31,12 +31,12 @@ struct _zp_async_t {
 
 
 //  --------------------------------------------------------------------------
-//  Create a new zp_async instance
+//  Create a new zpasync instance
 
-static zp_async_t *
-zp_async_new (zsock_t *pipe, void *args)
+static zpasync_t *
+zpasync_new (zsock_t *pipe, void *args)
 {
-    zp_async_t *self = (zp_async_t *) zmalloc (sizeof (zp_async_t));
+    zpasync_t *self = (zpasync_t *) zmalloc (sizeof (zpasync_t));
     assert (self);
 
     self->pipe = pipe;
@@ -50,14 +50,14 @@ zp_async_new (zsock_t *pipe, void *args)
 
 
 //  --------------------------------------------------------------------------
-//  Destroy the zp_async instance
+//  Destroy the zpasync instance
 
 static void
-zp_async_destroy (zp_async_t **self_p)
+zpasync_destroy (zpasync_t **self_p)
 {
     assert (self_p);
     if (*self_p) {
-        zp_async_t *self = *self_p;
+        zpasync_t *self = *self_p;
 
         //  TODO: Free actor properties
 
@@ -73,7 +73,7 @@ zp_async_destroy (zp_async_t **self_p)
 //  was successful. Otherwise -1.
 
 static int
-zp_async_start (zp_async_t *self)
+zpasync_start (zpasync_t *self)
 {
     assert (self);
 
@@ -87,7 +87,7 @@ zp_async_start (zp_async_t *self)
 //  was successful. Otherwise -1.
 
 static int
-zp_async_stop (zp_async_t *self)
+zpasync_stop (zpasync_t *self)
 {
     assert (self);
 
@@ -100,7 +100,7 @@ zp_async_stop (zp_async_t *self)
 //  Here we handle incoming message from the node
 
 static void
-zp_async_recv_api (zp_async_t *self)
+zpasync_recv_api (zpasync_t *self)
 {
     //  Get the whole message of the pipe in one go
     zmsg_t *request = zmsg_recv (self->pipe);
@@ -109,10 +109,10 @@ zp_async_recv_api (zp_async_t *self)
 
     char *command = zmsg_popstr (request);
     if (streq (command, "START"))
-        zp_async_start (self);
+        zpasync_start (self);
     else
     if (streq (command, "STOP"))
-        zp_async_stop (self);
+        zpasync_stop (self);
     else
     if (streq (command, "VERBOSE"))
         self->verbose = true;
@@ -133,9 +133,9 @@ zp_async_recv_api (zp_async_t *self)
 //  This is the actor which runs in its own thread.
 
 void
-zp_async_actor (zsock_t *pipe, void *args)
+zpasync_actor (zsock_t *pipe, void *args)
 {
-    zp_async_t * self = zp_async_new (pipe, args);
+    zpasync_t * self = zpasync_new (pipe, args);
     if (!self)
         return;          //  Interrupted
 
@@ -145,10 +145,10 @@ zp_async_actor (zsock_t *pipe, void *args)
     while (!self->terminated) {
         zsock_t *which = (zsock_t *) zpoller_wait (self->poller, 0);
         if (which == self->pipe)
-            zp_async_recv_api (self);
+            zpasync_recv_api (self);
        //  Add other sockets when you need them.
     }
-    zp_async_destroy (&self);
+    zpasync_destroy (&self);
 }
 
 //  --------------------------------------------------------------------------
@@ -168,15 +168,15 @@ zp_async_actor (zsock_t *pipe, void *args)
 #define SELFTEST_DIR_RW "src/selftest-rw"
 
 void
-zp_async_test (bool verbose)
+zpasync_test (bool verbose)
 {
-    printf (" * zp_async: ");
+    printf (" * zpasync: ");
     //  @selftest
     //  Simple create/destroy test
-    zactor_t *zp_async = zactor_new (zp_async_actor, NULL);
-    assert (zp_async);
+    zactor_t *zpasync = zactor_new (zpasync_actor, NULL);
+    assert (zpasync);
 
-    zactor_destroy (&zp_async);
+    zactor_destroy (&zpasync);
     //  @end
 
     printf ("OK\n");

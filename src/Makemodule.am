@@ -14,7 +14,7 @@ pkgconfig_DATA = src/libzp.pc
 
 src_libzp_la_SOURCES = \
     src/zp_proto.c \
-    src/zp_async.c \
+    src/zpasync.c \
     src/platform.h
 
 if ENABLE_DRAFTS

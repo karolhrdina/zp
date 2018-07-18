@@ -1,5 +1,5 @@
 /*  =========================================================================
-    zp_async - Asynchronous job execution actor
+    zpasync - Asynchronous job execution actor
 
     Copyright (c) the Contributors as noted in the AUTHORS file.
     This file is part of the ZeroMQ Pipes Project.
@@ -10,44 +10,44 @@
     =========================================================================
 */
 
-#ifndef ZP_ASYNC_H_INCLUDED
-#define ZP_ASYNC_H_INCLUDED
+#ifndef ZPASYNC_H_INCLUDED
+#define ZPASYNC_H_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct _zp_async_t zp_async_t;
+typedef struct _zpasync_t zpasync_t;
 
 //  @interface
-//  Create new zp_async actor instance.
+//  Create new zpasync actor instance.
 //  @TODO: Describe the purpose of this actor!
 //
-//      zactor_t *zp_async = zactor_new (zp_async, NULL);
+//      zactor_t *zpasync = zactor_new (zpasync, NULL);
 //
-//  Destroy zp_async instance.
+//  Destroy zpasync instance.
 //
-//      zactor_destroy (&zp_async);
+//      zactor_destroy (&zpasync);
 //
 //  Enable verbose logging of commands and activity:
 //
-//      zstr_send (zp_async, "VERBOSE");
+//      zstr_send (zpasync, "VERBOSE");
 //
-//  Start zp_async actor.
+//  Start zpasync actor.
 //
-//      zstr_sendx (zp_async, "START", NULL);
+//      zstr_sendx (zpasync, "START", NULL);
 //
-//  Stop zp_async actor.
+//  Stop zpasync actor.
 //
-//      zstr_sendx (zp_async, "STOP", NULL);
+//      zstr_sendx (zpasync, "STOP", NULL);
 //
-//  This is the zp_async constructor as a zactor_fn;
+//  This is the zpasync constructor as a zactor_fn;
 ZP_EXPORT void
-    zp_async_actor (zsock_t *pipe, void *args);
+    zpasync_actor (zsock_t *pipe, void *args);
 
 //  Self test of this actor
 ZP_EXPORT void
-    zp_async_test (bool verbose);
+    zpasync_test (bool verbose);
 //  @end
 
 #ifdef __cplusplus

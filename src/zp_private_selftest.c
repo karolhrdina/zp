@@ -29,8 +29,8 @@ void
 zp_private_selftest (bool verbose, const char *subtest)
 {
 // Tests for stable private classes:
-    if (streq (subtest, "$ALL") || streq (subtest, "zp_async_test"))
-        zp_async_test (verbose);
+    if (streq (subtest, "$ALL") || streq (subtest, "zpasync_test"))
+        zpasync_test (verbose);
 }
 /*
 ################################################################################
