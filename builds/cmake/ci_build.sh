@@ -57,6 +57,60 @@ fi
 
 # Clone and build dependencies
 [ -z "$CI_TIME" ] || echo "`date`: Starting build of dependencies (if any)..."
+if ! ((command -v dpkg-query >/dev/null 2>&1 && dpkg-query --list libzmq3-dev >/dev/null 2>&1) || \
+       (command -v brew >/dev/null 2>&1 && brew ls --versions libzmq >/dev/null 2>&1)); then
+    $CI_TIME git clone --quiet --depth 1 https://github.com/zeromq/libzmq.git libzmq
+    BASE_PWD=${PWD}
+    cd libzmq
+    CCACHE_BASEDIR=${PWD}
+    export CCACHE_BASEDIR
+    git --no-pager log --oneline -n1
+    if [ -e autogen.sh ]; then
+        $CI_TIME ./autogen.sh 2> /dev/null
+    fi
+    if [ -e buildconf ]; then
+        $CI_TIME ./buildconf 2> /dev/null
+    fi
+    if [ ! -e autogen.sh ] && [ ! -e buildconf ] && [ ! -e ./configure ] && [ -s ./configure.ac ]; then
+        $CI_TIME libtoolize --copy --force && \
+        $CI_TIME aclocal -I . && \
+        $CI_TIME autoheader && \
+        $CI_TIME automake --add-missing --copy && \
+        $CI_TIME autoconf || \
+        $CI_TIME autoreconf -fiv
+    fi
+    $CI_TIME ./configure "${CONFIG_OPTS[@]}"
+    $CI_TIME make -j4
+    $CI_TIME make install
+    cd "${BASE_PWD}"
+fi
+if ! ((command -v dpkg-query >/dev/null 2>&1 && dpkg-query --list libczmq-dev >/dev/null 2>&1) || \
+       (command -v brew >/dev/null 2>&1 && brew ls --versions czmq >/dev/null 2>&1)); then
+    $CI_TIME git clone --quiet --depth 1 https://github.com/zeromq/czmq.git czmq
+    BASE_PWD=${PWD}
+    cd czmq
+    CCACHE_BASEDIR=${PWD}
+    export CCACHE_BASEDIR
+    git --no-pager log --oneline -n1
+    if [ -e autogen.sh ]; then
+        $CI_TIME ./autogen.sh 2> /dev/null
+    fi
+    if [ -e buildconf ]; then
+        $CI_TIME ./buildconf 2> /dev/null
+    fi
+    if [ ! -e autogen.sh ] && [ ! -e buildconf ] && [ ! -e ./configure ] && [ -s ./configure.ac ]; then
+        $CI_TIME libtoolize --copy --force && \
+        $CI_TIME aclocal -I . && \
+        $CI_TIME autoheader && \
+        $CI_TIME automake --add-missing --copy && \
+        $CI_TIME autoconf || \
+        $CI_TIME autoreconf -fiv
+    fi
+    $CI_TIME ./configure "${CONFIG_OPTS[@]}"
+    $CI_TIME make -j4
+    $CI_TIME make install
+    cd "${BASE_PWD}"
+fi
 
 cd ../..
 
@@ -66,8 +120,8 @@ if [ -z "$DO_CLANG_FORMAT_CHECK" -a -f configure.ac ]; then
     $CI_TIME ./autogen.sh
     $CI_TIME ./configure "${CONFIG_OPTS[@]}"
     $CI_TIME make -j5 dist-gzip
-    $CI_TIME tar -xzf zp-0.0.0.tar.gz
-    cd zp-0.0.0
+    $CI_TIME tar -xzf zp-1.0.0.tar.gz
+    cd zp-1.0.0
 fi
 
 # Build and check this project

@@ -24,7 +24,32 @@ set(pkg_config_libs_private "")
 ########################################################################
 # options
 ########################################################################
-OPTION (ENABLE_DRAFTS "Build and install draft classes and methods" ON)
+if (NOT CMAKE_BUILD_TYPE)
+    if (EXISTS "${SOURCE_DIR}/.git")
+        set (CMAKE_BUILD_TYPE Debug)
+    else ()
+# http://xit0.org/2013/04/cmake-use-git-branch-and-commit-details-in-project/
+# http://stackoverflow.com/questions/6797395/cmake-execute-process-always-fails-with-no-such-file-or-directory-when-i-cal
+        execute_process(
+            COMMAND git rev-parse --show-toplevel
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            RESULT_VARIABLE git_result
+            OUTPUT_VARIABLE git_root
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        message(STATUS "git workspace root [${git_result}]: ${git_root}")
+        if ( "${git_result}" STREQUAL "0" )
+            set (CMAKE_BUILD_TYPE Debug)
+        else ()
+            set (CMAKE_BUILD_TYPE Release)
+        endif ()
+    endif ()
+endif ()
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    OPTION (ENABLE_DRAFTS "Build and install draft classes and methods" ON)
+else ()
+    OPTION (ENABLE_DRAFTS "Build and install draft classes and methods" OFF)
+endif ()
 IF (ENABLE_DRAFTS)
     ADD_DEFINITIONS (-DZP_BUILD_DRAFT_API)
 ENDIF (ENABLE_DRAFTS)
@@ -89,9 +114,33 @@ list(APPEND CMAKE_MODULE_PATH "${SOURCE_DIR}")
 set(OPTIONAL_LIBRARIES)
 
 ########################################################################
+# LIBZMQ dependency
+########################################################################
+find_package(libzmq REQUIRED)
+IF (LIBZMQ_FOUND)
+    include_directories(${LIBZMQ_INCLUDE_DIRS})
+    list(APPEND MORE_LIBRARIES ${LIBZMQ_LIBRARIES})
+    set(pkg_config_libs_private "${pkg_config_libs_private} -lzmq")
+ELSE (LIBZMQ_FOUND)
+    message( FATAL_ERROR "libzmq not found." )
+ENDIF (LIBZMQ_FOUND)
+
+########################################################################
+# CZMQ dependency
+########################################################################
+find_package(czmq REQUIRED)
+IF (CZMQ_FOUND)
+    include_directories(${CZMQ_INCLUDE_DIRS})
+    list(APPEND MORE_LIBRARIES ${CZMQ_LIBRARIES})
+    set(pkg_config_libs_private "${pkg_config_libs_private} -lczmq")
+ELSE (CZMQ_FOUND)
+    message( FATAL_ERROR "czmq not found." )
+ENDIF (CZMQ_FOUND)
+
+########################################################################
 # version
 ########################################################################
-set(ZP_VERSION_MAJOR 0)
+set(ZP_VERSION_MAJOR 1)
 set(ZP_VERSION_MINOR 0)
 set(ZP_VERSION_PATCH 0)
 set(ZP_VERSION "${ZP_VERSION_MAJOR}.${ZP_VERSION_MINOR}.${ZP_VERSION_PATCH}")
@@ -102,14 +151,197 @@ message(STATUS "Detected ZP Version - ${ZP_VERSION}")
 # includes
 ########################################################################
 set (zp_headers
+    include/zp_library.h
+    include/zp.h
+    include/zp_proto.h
 )
 
 source_group ("Header Files" FILES ${zp_headers})
 install(FILES ${zp_headers} DESTINATION include)
 
 ########################################################################
+# library
+########################################################################
+
+
+include_directories("${SOURCE_DIR}/src" "${SOURCE_DIR}/include")
+set (zp_sources
+    src/zp_proto.c
+)
+IF (ENABLE_DRAFTS)
+    list (APPEND zp_sources
+        src/zp_private_selftest.c
+    )
+ENDIF (ENABLE_DRAFTS)
+
+source_group("Source Files" FILES ${zp_sources})
+
+
+option(ZP_BUILD_SHARED "Whether or not to build the shared object" ON)
+option(ZP_BUILD_STATIC "Whether or not to build the static archive" ON)
+
+if (NOT ZP_BUILD_SHARED AND NOT ZP_BUILD_STATIC)
+  message(FATAL_ERROR "Neither static nor shared library build enabled")
+endif()
+
+IF (NOT MSVC)
+  # avoid building everything twice for shared + static
+  # only on *nix, as Windows needs different preprocessor defines in static builds
+  add_library (zp_objects OBJECT ${zp_sources})
+  set_property(TARGET zp_objects PROPERTY POSITION_INDEPENDENT_CODE ON)
+ENDIF (NOT MSVC)
+
+# shared
+if (ZP_BUILD_SHARED)
+  IF (MSVC)
+    add_library(zp SHARED ${zp_sources})
+  ELSE (MSVC)
+    add_library(zp SHARED $<TARGET_OBJECTS:zp_objects>)
+  ENDIF (MSVC)
+
+  set_target_properties (zp PROPERTIES
+    PUBLIC_HEADER "${public_headers}"
+    DEFINE_SYMBOL "ZP_EXPORTS"
+    SOVERSION "1"
+    VERSION "${ZP_VERSION}"
+    COMPILE_DEFINITIONS "DLL_EXPORT"
+    OUTPUT_NAME "zp"
+    PREFIX "lib"
+  )
+
+  target_link_libraries(zp
+    PUBLIC ${MORE_LIBRARIES}
+  )
+
+  install(TARGETS zp
+    EXPORT zp-targets
+    LIBRARY DESTINATION "lib${LIB_SUFFIX}" # .so file
+    ARCHIVE DESTINATION "lib${LIB_SUFFIX}" # .lib file
+    RUNTIME DESTINATION bin                # .dll file
+  )
+
+  target_include_directories(zp
+    PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:include>
+  )
+endif()
+
+# static
+if (ZP_BUILD_STATIC)
+  IF (MSVC)
+    add_library(zp-static STATIC ${zp_sources})
+  ELSE (MSVC)
+    add_library(zp-static STATIC $<TARGET_OBJECTS:zp_objects>)
+  ENDIF (MSVC)
+
+  set_target_properties(zp-static PROPERTIES
+    PUBLIC_HEADER "${public_headers}"
+    COMPILE_DEFINITIONS "ZP_STATIC"
+    OUTPUT_NAME "zp"
+    PREFIX "lib"
+  )
+
+  target_link_libraries(zp-static
+    PUBLIC ${MORE_LIBRARIES}
+  )
+
+  install(TARGETS zp-static
+    EXPORT zp-targets
+    LIBRARY DESTINATION "lib${LIB_SUFFIX}" # .so file
+    ARCHIVE DESTINATION "lib${LIB_SUFFIX}" # .lib file
+    RUNTIME DESTINATION bin                # .dll file
+  )
+
+  target_include_directories(zp-static
+    PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:include>
+  )
+  target_compile_definitions(zp-static
+    PUBLIC ZP_STATIC
+  )
+
+endif()
+
+
+
+########################################################################
+# pkgconfig
+########################################################################
+set (VERSION "1.0.0")
+set (prefix "${CMAKE_INSTALL_PREFIX}")
+set (exec_prefix "\${prefix}")
+set (libdir "\${prefix}/lib${LIB_SUFFIX}")
+set (includedir "\${prefix}/include")
+IF (ENABLE_DRAFTS)
+    set (pkg_config_defines "-DZP_BUILD_DRAFT_API=1")
+ELSE (ENABLE_DRAFTS)
+    set (pkg_config_defines "")
+ENDIF (ENABLE_DRAFTS)
+configure_file(
+    "${SOURCE_DIR}/src/libzp.pc.in"
+    "${SOURCE_DIR}/src/libzp.pc"
+@ONLY)
+
+install(
+    FILES "${SOURCE_DIR}/src/libzp.pc"
+    DESTINATION "lib${LIB_SUFFIX}/pkgconfig"
+)
+
+########################################################################
+# installer
+########################################################################
+include(CMakePackageConfigHelpers)
+if (WIN32)
+  set(CMAKECONFIG_INSTALL_DIR "CMake" CACHE STRING "install path for zpConfig.cmake")
+else()
+  # GNUInstallDirs "DATADIR" wrong here; CMake search path wants "share".
+  set(CMAKECONFIG_INSTALL_DIR "share/cmake/zp" CACHE STRING "install path for zpConfig.cmake")
+endif()
+
+if (NOT CMAKE_VERSION VERSION_LESS 3.0)
+  export(EXPORT zp-targets
+         FILE "${CMAKE_CURRENT_BINARY_DIR}/zpTargets.cmake")
+endif()
+configure_package_config_file(builds/cmake/Config.cmake.in
+                              "${CMAKE_CURRENT_BINARY_DIR}/zpConfig.cmake"
+                              INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR})
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/zpConfigVersion.cmake
+                                 VERSION ${ZP_VERSION}
+                                 COMPATIBILITY AnyNewerVersion)
+install(EXPORT zp-targets
+        FILE zpTargets.cmake
+        DESTINATION ${CMAKECONFIG_INSTALL_DIR})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zpConfig.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/zpConfigVersion.cmake
+              DESTINATION ${CMAKECONFIG_INSTALL_DIR})
+
+########################################################################
 # executables
 ########################################################################
+add_executable(
+    zp_selftest
+    "${SOURCE_DIR}/src/zp_selftest.c"
+)
+if (TARGET zp)
+target_link_libraries(
+    zp_selftest
+    zp
+    ${LIBZMQ_LIBRARIES}
+    ${CZMQ_LIBRARIES}
+    ${OPTIONAL_LIBRARIES}
+)
+endif()
+if (NOT TARGET zp AND TARGET zp-static)
+target_link_libraries(
+    zp_selftest
+    zp-static
+    ${LIBZMQ_LIBRARIES}
+    ${CZMQ_LIBRARIES}
+    ${OPTIONAL_LIBRARIES}
+)
+endif()
 
 ########################################################################
 # tests
@@ -125,7 +357,14 @@ if(UNIX)
 endif()
 
 set(TEST_CLASSES
+    zp_proto
 )
+
+IF (ENABLE_DRAFTS)
+    list (APPEND TEST_CLASSES
+    private_classes
+    )
+ENDIF (ENABLE_DRAFTS)
 
 
 add_custom_target(
@@ -176,6 +415,7 @@ set(cmake_generated ${CMAKE_BINARY_DIR}/CMakeCache.txt
                     ${CMAKE_BINARY_DIR}/src/platform.h
                     ${CMAKE_BINARY_DIR}/src/libzp.pc
                     ${CMAKE_BINARY_DIR}/src/libzp.so
+                    ${CMAKE_BINARY_DIR}/src/zp_selftest
                     ${CMAKE_BINARY_DIR}/src/zp_selftest
 )
 
