@@ -1,0 +1,49 @@
+The following ABNF grammar defines the ZeroMQ Pipes protocol:
+
+    zp_proto        = *( CONNECTION-OPEN | CONNECTION-CLOSE | PING | PONG | OK | ERROR )
+
+    ;  Client opens a connection to the server. Server replies with OK or
+    ;  ERROR.
+
+    CONNECTION-OPEN = signature %d1 protocol version uuid
+    signature       = %xAA %xA1             ; two octets
+    protocol        = string                ; Constant "ZEROMQ_PIPES"
+    version         = number-2              ; Protocol version 1
+    uuid            = uuid                  ; Client unique identifier
+
+    ;  Client closes the connection. This is polite though not mandatory.
+    ;  Server will reply with OK.
+
+    CONNECTION-CLOSE = signature %d2
+
+    ;  Client pings the server. Server replies with PONG, or ERROR with
+    ;  status COMMAND-INVALID if the client is not recognized (e.g. after a
+    ;  server restart or network recovery).
+
+    PING            = signature %d3
+
+    ;  Server replies to a client connection ping.
+
+    PONG            = signature %d4
+
+    ;  Server replies with success status. Actual status code provides more
+    ;  information. An OK always has a 2xx status code.
+
+    OK              = signature %d5 status
+    status          = status                ;
+
+    ;  Server replies with failure status. Actual status code provides more
+    ;  information. An ERROR always has a 3xx, 4xx, or 5xx status code.
+
+    ERROR           = signature %d6 status
+    status          = status                ;
+
+    ; A uuid is 16-octet binary content
+    uuid            = 16OCTET
+
+    ; Strings are always length + text contents
+    string          = number-1 *VCHAR
+
+    ; Numbers are unsigned integers in network byte order
+    number-1        = 1OCTET
+    number-2        = 2OCTET
