@@ -16,7 +16,7 @@
     <use project = "czmq" />
 
     <class name = "zp_proto" state = "stable">ZeroMQ Pipes protocol</class>
-    <actor name = "zp_async" state = "stable" private = "1">Asynchronous job execution actor</actor>
+    <actor name = "zpasync" state = "stable" private = "1">Asynchronous job execution actor</actor>
 
     <model name = "zp_proto" />
 
