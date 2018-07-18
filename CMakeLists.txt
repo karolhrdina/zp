@@ -154,6 +154,7 @@ set (zp_headers
     include/zp_library.h
     include/zp.h
     include/zp_proto.h
+    src/zp_async.h
 )
 
 source_group ("Header Files" FILES ${zp_headers})
@@ -167,6 +168,7 @@ install(FILES ${zp_headers} DESTINATION include)
 include_directories("${SOURCE_DIR}/src" "${SOURCE_DIR}/include")
 set (zp_sources
     src/zp_proto.c
+    src/zp_async.c
 )
 IF (ENABLE_DRAFTS)
     list (APPEND zp_sources

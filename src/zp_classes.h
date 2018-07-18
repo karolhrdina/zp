@@ -26,12 +26,22 @@
 //  Extra headers
 
 //  Opaque class structures to allow forward references
+#ifndef ZP_ASYNC_T_DEFINED
+typedef struct _zp_async_t zp_async_t;
+#define ZP_ASYNC_T_DEFINED
+#endif
 
 //  Internal API
 
+#include "zp_async.h"
 
 //  *** To avoid double-definitions, only define if building without draft ***
 #ifndef ZP_BUILD_DRAFT_API
+
+//  *** Draft method, defined for internal use only ***
+//  Self test of this class.
+ZP_PRIVATE void
+    zp_async_test (bool verbose);
 
 //  Self test for private classes
 ZP_PRIVATE void

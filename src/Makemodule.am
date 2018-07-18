@@ -14,6 +14,7 @@ pkgconfig_DATA = src/libzp.pc
 
 src_libzp_la_SOURCES = \
     src/zp_proto.c \
+    src/zp_async.c \
     src/platform.h
 
 if ENABLE_DRAFTS
@@ -48,6 +49,11 @@ src_zp_selftest_CPPFLAGS = ${AM_CPPFLAGS}
 src_zp_selftest_LDADD = ${program_libs}
 src_zp_selftest_SOURCES = src/zp_selftest.c
 endif #ENABLE_ZP_SELFTEST
+
+# Install api files into /usr/local/share/zproject
+apidir = @datadir@/zproject/zp
+dist_api_DATA = \
+    api/zp_proto.api
 
 # define custom target for all products of /src
 src: \
