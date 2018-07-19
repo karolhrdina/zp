@@ -84,33 +84,47 @@ zpasync_destroy (zpasync_t **self_p)
 }
 
 
-//  Start this actor. Return a value greater or equal to zero if initialization
-//  was successful. Otherwise -1.
+//  --------------------------------------------------------------------------
+//  Actor receive api helpers
 
-static int
-zpasync_start (zpasync_t *self)
+static void
+recv_api_command_start (zpasync_t *self)
 {
     assert (self);
 
     //  TODO: Add startup actions
 
-    return 0;
+    return;
 }
 
-
-//  Stop this actor. Return a value greater or equal to zero if stopping
-//  was successful. Otherwise -1.
-
-static int
-zpasync_stop (zpasync_t *self)
+static void
+recv_api_command_stop (zpasync_t *self)
 {
     assert (self);
 
     //  TODO: Add shutdown actions
 
-    return 0;
+    return;
 }
 
+static void
+recv_api_command_run (zpasync_t *self)
+{
+    assert (self);
+
+    //  TODO: Add run actions
+
+    return;
+}
+
+static void
+recv_api_command_verbose (zpasync_t *self)
+{
+    assert (self);
+
+    //  TODO: Add verbose actions
+    return;
+}
 
 //  Here we handle incoming message from the node
 
@@ -124,13 +138,16 @@ zpasync_recv_api (zpasync_t *self)
 
     char *command = zmsg_popstr (request);
     if (streq (command, "START"))
-        zpasync_start (self);
+        recv_api_command_start (self);
     else
     if (streq (command, "STOP"))
-        zpasync_stop (self);
+        recv_api_command_stop (self);
+    else
+    if (streq (command, "RUN"))
+        recv_api_command_run (self);
     else
     if (streq (command, "VERBOSE"))
-        self->verbose = true;
+        recv_api_command_verbose (self);
     else
     if (streq (command, "$TERM"))
         //  The $TERM command is send by zactor_destroy() method
