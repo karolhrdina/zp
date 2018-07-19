@@ -174,10 +174,13 @@ zpasync_test (bool verbose)
 {
     printf (" * zpasync: ");
     //  @selftest
+
     //  Simple create/destroy test
     zactor_t *zpasync = zactor_new (zpasync_actor, NULL);
     assert (zpasync);
 
+    zactor_destroy (&zpasync);
+    assert (zpasync == NULL);
     zactor_destroy (&zpasync);
     //  @end
 
