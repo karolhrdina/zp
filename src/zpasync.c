@@ -122,10 +122,12 @@ recv_api_command_verbose (zpasync_t *self)
 {
     assert (self);
 
-    //  TODO: Add verbose actions
+    self->verbose = true;
+    zstr_send (self->pipe, "OK");
     return;
 }
 
+//  --------------------------------------------------------------------------
 //  Here we handle incoming message from the node
 
 static void
