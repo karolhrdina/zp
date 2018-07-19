@@ -154,19 +154,6 @@ zpasync_actor (zsock_t *pipe, void *args)
 //  --------------------------------------------------------------------------
 //  Self test of this actor.
 
-// If your selftest reads SCMed fixture data, please keep it in
-// src/selftest-ro; if your test creates filesystem objects, please
-// do so under src/selftest-rw.
-// The following pattern is suggested for C selftest code:
-//    char *filename = NULL;
-//    filename = zsys_sprintf ("%s/%s", SELFTEST_DIR_RO, "mytemplate.file");
-//    assert (filename);
-//    ... use the "filename" for I/O ...
-//    zstr_free (&filename);
-// This way the same "filename" variable can be reused for many subtests.
-#define SELFTEST_DIR_RO "src/selftest-ro"
-#define SELFTEST_DIR_RW "src/selftest-rw"
-
 void
 zpasync_test (bool verbose)
 {
