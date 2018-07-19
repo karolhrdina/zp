@@ -19,13 +19,17 @@
 
 #include "zp_classes.h"
 
+#define DEFAULT_POLL_INTERVAL   1000
+
 //  Structure of our actor
 
 struct _zpasync_t {
     zsock_t *pipe;              //  Actor command pipe
-    zpoller_t *poller;          //  Socket poller
     bool terminated;            //  Did caller ask us to quit?
     bool verbose;               //  Verbose logging enabled?
+    uint32_t poll_interval;     //  Polling interval
+
+    zpoller_t *poller;          //  Socket poller
     //  TODO: Declare properties
 };
 
@@ -41,8 +45,11 @@ zpasync_new (zsock_t *pipe, void *args)
 
     self->pipe = pipe;
     self->terminated = false;
-    self->poller = zpoller_new (self->pipe, NULL);
+    self->verbose = false;
+    self->poll_interval = DEFAULT_POLL_INTERVAL;
 
+    self->poller = zpoller_new (self->pipe, NULL);
+    assert (self->poller);
     //  TODO: Initialize properties
 
     return self;
