@@ -27,6 +27,7 @@ struct _zpasync_t {
     zsock_t *pipe;              //  Actor command pipe
     bool terminated;            //  Did caller ask us to quit?
     bool verbose;               //  Verbose logging enabled?
+    bool started;               //  Did caller ask us to start?
     uint32_t poll_interval;     //  Polling interval
 
     zpoller_t *poller;          //  Socket poller
@@ -47,6 +48,7 @@ zpasync_new (zsock_t *pipe, void *args)
     self->pipe = pipe;
     self->terminated = false;
     self->verbose = false;
+    self->started = false;
     self->poll_interval = DEFAULT_POLL_INTERVAL;
 
     self->poller = zpoller_new (self->pipe, NULL);
@@ -92,8 +94,8 @@ recv_api_command_start (zpasync_t *self)
 {
     assert (self);
 
-    //  TODO: Add startup actions
-
+    self->started = true;
+    zstr_send (self->pipe, "OK");
     return;
 }
 
@@ -102,8 +104,8 @@ recv_api_command_stop (zpasync_t *self)
 {
     assert (self);
 
-    //  TODO: Add shutdown actions
-
+    self->started = false;
+    zstr_send (self->pipe, "OK");
     return;
 }
 
