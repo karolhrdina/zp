@@ -30,6 +30,7 @@ struct _zpasync_t {
     uint32_t poll_interval;     //  Polling interval
 
     zpoller_t *poller;          //  Socket poller
+    zproc_t *proc;              //  The Heart of this CLASS ;)
     //  TODO: Declare properties
 };
 
@@ -50,7 +51,8 @@ zpasync_new (zsock_t *pipe, void *args)
 
     self->poller = zpoller_new (self->pipe, NULL);
     assert (self->poller);
-    //  TODO: Initialize properties
+
+    self->proc = NULL;
 
     return self;
 }
@@ -66,10 +68,16 @@ zpasync_destroy (zpasync_t **self_p)
     if (*self_p) {
         zpasync_t *self = *self_p;
 
-        //  TODO: Free actor properties
+        //  Free actor properties
+        zpoller_destroy (&self->poller);
+        
+        if (self->proc && zproc_running (self->proc)) {
+            zproc_kill (self->proc, SIGKILL);
+            zclock_sleep (200);
+        }
+        zproc_destroy (&self->proc);
 
         //  Free object itself
-        zpoller_destroy (&self->poller);
         free (self);
         *self_p = NULL;
     }
