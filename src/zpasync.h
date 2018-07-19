@@ -41,6 +41,10 @@ typedef struct _zpasync_t zpasync_t;
 //
 //      zstr_sendx (zpasync, "STOP", NULL);
 //
+//  Run asynchronous job.
+//
+//      zstr_sendx (zpasync, "RUN", "<canonical path to binary>", "<arg^1>", ..., NULL);
+//
 //  This is the zpasync constructor as a zactor_fn;
 ZP_EXPORT void
     zpasync_actor (zsock_t *pipe, void *args);
