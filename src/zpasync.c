@@ -200,10 +200,9 @@ zpasync_recv_api (zpasync_t *self)
     if (streq (command, "$TERM"))
         //  The $TERM command is send by zactor_destroy() method
         self->terminated = true;
-    else {
-        zsys_error ("invalid command '%s'", command);
-        assert (false);
-    }
+    else
+        zstr_sendx (self->pipe, "ERROR", "Invalid actor command.", NULL);
+
     zstr_free (&command);
     zmsg_destroy (&request);
 }
