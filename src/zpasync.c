@@ -185,6 +185,12 @@ zpasync_recv_api (zpasync_t *self)
        return;        //  Interrupted
 
     char *command = zmsg_popstr (request);
+    if (!command) {
+        zstr_sendx (self->pipe, "ERROR", "Invalid actor command.", NULL);
+        zmsg_destroy (&request);
+        return;
+    }
+
     if (streq (command, "START"))
         recv_api_command_start (self, request);
     else
