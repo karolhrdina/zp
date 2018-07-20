@@ -215,6 +215,16 @@ zpasync_recv_api (zpasync_t *self)
 
 
 //  --------------------------------------------------------------------------
+//  Here we handle what should happen periodically on poll
+
+static void
+zpasync_poll_api (zpasync_t *self)
+{
+    assert (self);
+}
+
+
+//  --------------------------------------------------------------------------
 //  This is the actor which runs in its own thread.
 
 void
@@ -224,14 +234,44 @@ zpasync_actor (zsock_t *pipe, void *args)
     if (!self)
         return;          //  Interrupted
 
+    uint64_t timestamp = (uint64_t) zclock_mono ();
+
     //  Signal actor successfully initiated
     zsock_signal (self->pipe, 0);
 
     while (!self->terminated) {
-        zsock_t *which = (zsock_t *) zpoller_wait (self->poller, 0);
-        if (which == self->pipe)
+        zsock_t *which = (zsock_t *) zpoller_wait (self->poller, self->poll_interval);
+
+        if (self->started == false) {
+            if (which == self->pipe)
+                zpasync_recv_api (self);
+            continue;
+        }
+
+        assert (self->started == true);
+
+        if (which == NULL) {
+            if (self->terminated)
+                break;
+            zpasync_poll_api (self);
+            timestamp = (uint64_t) zclock_mono ();
+            continue;
+        }
+
+        uint64_t now = (uint64_t) zclock_mono ();
+        if (now - timestamp >= self->poll_interval) {
+            zpasync_poll_api (self);
+            timestamp = (uint64_t) zclock_mono ();
+        }
+
+        if (which == self->pipe) {
             zpasync_recv_api (self);
-       //  Add other sockets when you need them.
+            continue;
+        }
+
+        if (which == zproc_stdout (self->proc)) {
+            //  TODO
+        }
     }
     zpasync_destroy (&self);
 }
