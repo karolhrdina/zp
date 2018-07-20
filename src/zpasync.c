@@ -118,11 +118,17 @@ recv_api_command_run (zpasync_t *self, zmsg_t *message)
     assert (message);
 
     if (!self->started) {
-        zstr_sendx (self->pipe, "ERROR", "...reason...");
+        zstr_sendx (self->pipe, "ERROR", "...reason...", NULL);
         return;
     }
 
     if (self->proc) {
+        zpoller_remove (self->poller, (void *) zproc_stdout (self->proc));
+        if (zproc_running (self->proc)) {
+            zproc_kill (self->proc, SIGKILL);
+            zclock_sleep (200);
+        }
+        zproc_destroy (&self->proc);
     }
 
     self->proc = zproc_new ();
@@ -133,13 +139,26 @@ recv_api_command_run (zpasync_t *self, zmsg_t *message)
     int rv = zpoller_add (self->poller, (void *) zproc_stdout (self->proc));
     assert (rv == 0);
 
-    //  TODO: set zlist_t args
     zlist_t *args = zlist_new ();
     assert (args);
     zlist_autofree (args);
 
-    
+    char *arg = zmsg_popstr (message);
+    while (arg) {
+        zlist_append (args, (void *) arg);
+        arg = zmsg_popstr (message);
+    }
 
+    if (zlist_size (args) == 0) {
+        zlist_destroy (&args);
+        zstr_sendx (self->pipe, "ERROR", "...reason...", NULL);
+        return;
+    }
+    zproc_set_args (self->proc, &args);
+
+    zproc_run (self->proc);
+    
+    zstr_send (self->pipe, "OK");
     return;
 }
 
