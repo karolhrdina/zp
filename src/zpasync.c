@@ -90,9 +90,10 @@ zpasync_destroy (zpasync_t **self_p)
 //  Actor receive api helpers
 
 static void
-recv_api_command_start (zpasync_t *self)
+recv_api_command_start (zpasync_t *self, zmsg_t *message)
 {
     assert (self);
+    assert (message);
 
     self->started = true;
     zstr_send (self->pipe, "OK");
@@ -100,9 +101,10 @@ recv_api_command_start (zpasync_t *self)
 }
 
 static void
-recv_api_command_stop (zpasync_t *self)
+recv_api_command_stop (zpasync_t *self, zmsg_t *message)
 {
     assert (self);
+    assert (message);
 
     self->started = false;
     zstr_send (self->pipe, "OK");
@@ -110,19 +112,42 @@ recv_api_command_stop (zpasync_t *self)
 }
 
 static void
-recv_api_command_run (zpasync_t *self)
+recv_api_command_run (zpasync_t *self, zmsg_t *message)
 {
     assert (self);
+    assert (message);
 
-    //  TODO: Add run actions
+    if (!self->started) {
+        zstr_sendx (self->pipe, "ERROR", "...reason...");
+        return;
+    }
+
+    if (self->proc) {
+    }
+
+    self->proc = zproc_new ();
+    assert (self->proc);
+    
+    zproc_set_stdout (self->proc, NULL);
+
+    int rv = zpoller_add (self->poller, (void *) zproc_stdout (self->proc));
+    assert (rv == 0);
+
+    //  TODO: set zlist_t args
+    zlist_t *args = zlist_new ();
+    assert (args);
+    zlist_autofree (args);
+
+    
 
     return;
 }
 
 static void
-recv_api_command_verbose (zpasync_t *self)
+recv_api_command_verbose (zpasync_t *self, zmsg_t *message)
 {
     assert (self);
+    assert (message);
 
     self->verbose = true;
     zstr_send (self->pipe, "OK");
@@ -142,16 +167,16 @@ zpasync_recv_api (zpasync_t *self)
 
     char *command = zmsg_popstr (request);
     if (streq (command, "START"))
-        recv_api_command_start (self);
+        recv_api_command_start (self, request);
     else
     if (streq (command, "STOP"))
-        recv_api_command_stop (self);
+        recv_api_command_stop (self, request);
     else
     if (streq (command, "RUN"))
-        recv_api_command_run (self);
+        recv_api_command_run (self, request);
     else
     if (streq (command, "VERBOSE"))
-        recv_api_command_verbose (self);
+        recv_api_command_verbose (self, request);
     else
     if (streq (command, "$TERM"))
         //  The $TERM command is send by zactor_destroy() method
